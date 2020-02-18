@@ -1,6 +1,7 @@
 #ifndef iw_api_h
 #define iw_api_h
-#include "Arduino.h"
+
+#include "stdint.h"
 
 #define SIZE_OF_API_PACKET 53
 #define SIZE_OF_API_BODY (SIZE_OF_API_PACKET-9)
