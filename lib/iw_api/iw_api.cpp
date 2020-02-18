@@ -1,5 +1,5 @@
 #include "iw_api.h"
-#include "Arduino.h"
+// #include "Arduino.h"
 
 /*
 Injest new UART characters here. If the packet is complete, it will flag the packet as new
@@ -8,11 +8,11 @@ void iw_api_c::injest(char in) {
     _api_error_t status = in_byte(in);
     if (status == GOOD) parse();
     else if (status == NOT_READY) return;
-    else {
-        if (status == WRONG_VERSION) Serial.println("WRONG VERSION");
-        else if (status == WRONG_VERSION) Serial.println("WRONG SIZE");
-        else if (status == BAD_CHECKSUM) Serial.println("BAD CHECKSUM");
-    }
+    // else {
+    //     if (status == WRONG_VERSION) Serial.println("WRONG VERSION");
+    //     else if (status == WRONG_VERSION) Serial.println("WRONG SIZE");
+    //     else if (status == BAD_CHECKSUM) Serial.println("BAD CHECKSUM");
+    // }
 }
 
 
