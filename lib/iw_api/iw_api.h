@@ -5,7 +5,7 @@
 #define SIZE_OF_API_PACKET 53
 #define SIZE_OF_API_BODY (SIZE_OF_API_PACKET-9)
 
-#define SIZE_OF_API_REPLY 163
+#define SIZE_OF_API_REPLY 203
 #define SIZE_OF_API_REPLY_BODY (SIZE_OF_API_REPLY-9)
 
 #define DEBUG_IWAPI false
@@ -19,8 +19,8 @@ struct iw_api_data_t {
     int32_t pan;
     int32_t tilt;
     int32_t roll;
-    int32_t k1;
-    int32_t k2;
+    int32_t knob1;
+    int32_t knob2;
     uint16_t focus;
     uint16_t iris;
     uint16_t zoom;
@@ -35,7 +35,7 @@ struct iw_api_data_t {
     uint8_t _reserved[8];
 };
 struct iw_api_knob_t {
-    char name[9];
+    char name[15];
     bool ini;
     int32_t set;
     int32_t max;
@@ -49,11 +49,11 @@ struct iw_api_control_t {
     _api_status_level status_level;
     iw_api_knob_t knob1;
     iw_api_knob_t knob2;
-    char button1_name[9];
-    char button2_name[9];
-    char button3_name[9];
-    char button4_name[9];
-    char roll_name[9];
+    char button1_name[15];
+    char button2_name[15];
+    char button3_name[15];
+    char button4_name[15];
+    char roll_name[15];
     char lens_status[15];
     float battery_left;
     float battery_right;
@@ -67,6 +67,7 @@ class iw_api_c {
         void injest(char in);
         bool new_packet();
         void build_control_packet();
+        bool buttonPressed(uint8_t button); 
         uint8_t control_packet[SIZE_OF_API_REPLY];
     private:
         uint8_t version = 1;

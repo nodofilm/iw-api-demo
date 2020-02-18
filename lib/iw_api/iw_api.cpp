@@ -23,8 +23,8 @@ void iw_api_c::parse() {
     data.pan = int32_ify(&buffer[7]);
     data.tilt = int32_ify(&buffer[11]);
     data.roll = int32_ify(&buffer[15]);
-    data.k1 = int32_ify(&buffer[19]);
-    data.k2 = int32_ify(&buffer[23]);
+    data.knob1 = int32_ify(&buffer[19]);
+    data.knob2 = int32_ify(&buffer[23]);
     data.focus = uin16_ify(&buffer[27]);
     data.iris = uin16_ify(&buffer[29]);
     data.zoom = uin16_ify(&buffer[31]);
@@ -116,14 +116,12 @@ void iw_api_c::build_control_packet() {
     offset = addItem(control_packet, &control.status_level, sizeof(control.status_level), offset);
     offset = addItem(control_packet, control.status, sizeof(control.status), offset);
 
-    offset = addItem(control_packet, &control.knob1.ini, sizeof(control.knob1.ini), offset);
     offset = addItem(control_packet, control.knob1.name, sizeof(control.knob1.name), offset);
     offset = addItem(control_packet, &control.knob1.set, sizeof(control.knob1.set), offset);
     offset = addItem(control_packet, &control.knob1.max, sizeof(control.knob1.max), offset);
     offset = addItem(control_packet, &control.knob1.min, sizeof(control.knob1.min), offset);
     offset = addItem(control_packet, &control.knob1.scaling, sizeof(control.knob1.scaling), offset);
 
-    offset = addItem(control_packet, &control.knob2.ini, sizeof(control.knob2.ini), offset);
     offset = addItem(control_packet, control.knob2.name, sizeof(control.knob2.name), offset);
     offset = addItem(control_packet, &control.knob2.set, sizeof(control.knob2.set), offset);
     offset = addItem(control_packet, &control.knob2.max, sizeof(control.knob2.max), offset);
@@ -157,6 +155,34 @@ A variation of memcpy for copying multiple items into a buffer. Returns the next
 int32_t iw_api_c::addItem(void * to, void * from, int size, int offset){
     memcpy(to+offset, from, size);
     return offset+size;
+}
+/*
+Returns true if the button called was pressed. Pass 1-4 as the button number. There is no button 0.
+*/
+bool iw_api_c::buttonPressed(uint8_t num){
+    static uint8_t buttons_last[5];
+    if (num == 1){
+        if (data._blip_1 != buttons_last[1]) {
+            buttons_last[1] = data._blip_1;
+            return true;
+        }
+    } else if (num == 2){
+        if (data._blip_2 != buttons_last[2]) {
+            buttons_last[2] = data._blip_2;
+            return true;
+        }
+    } else if (num == 3){
+        if (data._blip_3 != buttons_last[3]) {
+            buttons_last[3] = data._blip_3;
+            return true;
+        }
+    } else if (num == 4){
+        if (data._blip_4 != buttons_last[4]) {
+            buttons_last[4] = data._blip_4;
+            return true;
+        }
+    }
+    return false;
 }
 
 /*
