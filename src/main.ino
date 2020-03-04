@@ -6,15 +6,16 @@ iw_api_c inertia_wheels;                                        //Create an inst
 
 void data_print();
 void knob_ini_check();
+void check_sync();
 
 void setup() {
     Serial.begin(115200);
     Serial1.begin(460800);                                      //This the required baud
     strcpy(inertia_wheels.control.name, "API Demo");            //Name your project. Up to 8 characters
     
-    strcpy(inertia_wheels.control.status, "System Okay");       //Show a status on both the dashboard an in the menu
-    inertia_wheels.control.status_level = OKAY;                 //Set this to change the intensity of 
-    strcpy(inertia_wheels.control.lens_status, "OK  OK  OK ");
+    strcpy(inertia_wheels.control.status, "System Okay");       //Show a status on both the dashboard an in the menu. Up to 14 characters
+    inertia_wheels.control.status_level = IW_OKAY;                 //Set this to change the intensity of 
+    strcpy(inertia_wheels.control.lens_status, "OK  OK  OK ");  // Up to 14 characters
 
     //Knob 1
     strcpy(inertia_wheels.control.knob1.name, "Setting 1");     //Setting a name here, enables this knob
@@ -57,6 +58,8 @@ void setup() {
     inertia_wheels.control.battery_left = 13.1;
     inertia_wheels.control.battery_right = 11.9;
     inertia_wheels.control.battery_warning_voltage = 12.0;  //This is the voltage threshold at which the display will start to warn the user that hte battery is low
+
+    inertia_wheels.ini(); //initialize
 }
 
 void loop() {
@@ -65,8 +68,9 @@ void loop() {
         inertia_wheels.injest(Serial1.read());                              //injest() takes one byte at a time and puts it into the class, it will perform all necessary tasks to parse the incoming packet as well. 
         if (inertia_wheels.new_packet()){                                   //new_packet() returns true once a new packet has been found and parsed. New data is ready to be used by your application now.
             //Run your tasks:
-            data_print();
+            // data_print();
             check_buttons();
+            check_sync();
             //Generate a control reply. You do not need to update at 100Hz. Anywhere from 1Hz to 10Hz will suffice. 
             count ++;
             if (count >= 10){                                               //This counter is used to send a control packet 1 out of ever 10 incoming packets
@@ -97,10 +101,34 @@ void data_print() {
 
 void check_buttons() {
     if (inertia_wheels.buttonPressed(1)) {
-        Serial.println("Button 1 Pressed");
+        strcpy(inertia_wheels.control.name, "API 2"); 
+        strcpy(inertia_wheels.control.knob1.name, "Setting 3");     //Setting a name here, enables this knob
+        inertia_wheels.control.knob1.set = 5;
+        inertia_wheels.control.knob1.max = 10;
+        inertia_wheels.control.knob1.min = 0;             
+        inertia_wheels.control.knob1.scaling = 1; 
+
+        strcpy(inertia_wheels.control.knob2.name, "Setting 4");     //This enables this knob
+        inertia_wheels.control.knob2.set = -40;                     //This value is the initial and default value available to the user. This can only be set once.
+        inertia_wheels.control.knob2.max = 120;
+        inertia_wheels.control.knob2.min = -120;                
+        inertia_wheels.control.knob2.scaling = 20; 
+        inertia_wheels.ini(); 
     }
     if (inertia_wheels.buttonPressed(2)) {
-        Serial.println("Button 2 Pressed");
+        strcpy(inertia_wheels.control.name, "API 2"); 
+        strcpy(inertia_wheels.control.knob1.name, "Setting 3");     //Setting a name here, enables this knob
+        inertia_wheels.control.knob1.set = 0;
+        inertia_wheels.control.knob1.max = 10;
+        inertia_wheels.control.knob1.min = 0;             
+        inertia_wheels.control.knob1.scaling = 1; 
+
+        strcpy(inertia_wheels.control.knob2.name, "Setting 4");     //This enables this knob
+        inertia_wheels.control.knob2.set = 120;                     //This value is the initial and default value available to the user. This can only be set once.
+        inertia_wheels.control.knob2.max = 120;
+        inertia_wheels.control.knob2.min = -120;                
+        inertia_wheels.control.knob2.scaling = 20; 
+        inertia_wheels.ini();
     }
     if (inertia_wheels.buttonPressed(3)) {
         Serial.println("Button 3 Pressed");
@@ -108,4 +136,8 @@ void check_buttons() {
     if (inertia_wheels.buttonPressed(4)) {
         Serial.println("Button 4 Pressed");
     }
+}
+
+void check_sync() {
+    if (!inertia_wheels.ini_sync()) Serial.println("out of sync");
 }

@@ -5,18 +5,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#define SIZE_OF_API_PACKET 53
+#define SIZE_OF_API_PACKET 58
 #define SIZE_OF_API_BODY (SIZE_OF_API_PACKET-9)
 
-#define SIZE_OF_API_REPLY 203
+#define SIZE_OF_API_REPLY 204
 #define SIZE_OF_API_REPLY_BODY (SIZE_OF_API_REPLY-9)
 
 #define DEBUG_IWAPI false
 
 #define API_VERSION 1
 
-enum _api_error_t : uint8_t {GOOD = 0, NOT_READY, WRONG_SIZE, BAD_CHECKSUM, BAD_FOOTER, WRONG_VERSION};
-enum _api_status_level : uint8_t {OFF = 0, OKAY = 50, ATTENTION = 100, ERROR = 200};
+enum _api_error_t : uint8_t {IW_GOOD = 0, IW_NOT_READY, IW_WRONG_SIZE, IW_BAD_CHECKSUM, IW_BAD_FOOTER, IW_WRONG_VERSION};
+enum _api_status_level : uint8_t {IW_OFF = 0, IW_OKAY = 50, IW_ATTENTION = 100, IW_ERROR = 200};
 
 struct iw_api_data_t {
     int32_t pan;
@@ -28,18 +28,22 @@ struct iw_api_data_t {
     uint16_t iris;
     uint16_t zoom;
     int32_t rssi;
+    uint8_t pan_mass;
+    uint8_t tilt_mass;
+    uint8_t pan_speed;
+    uint8_t tilt_speed;
     float snr;
     uint8_t _blip_1;
     uint8_t _blip_2;
     uint8_t _blip_3;
     uint8_t _blip_4;
-    uint8_t _states0;
-    uint8_t _states1;
+    uint8_t _states_0;
+    uint8_t _states_1;
+    uint8_t _ini_propagation;
     uint8_t _reserved[8];
 };
 struct iw_api_knob_t {
     char name[15];
-    bool ini;
     int32_t set;
     int32_t max;
     int32_t min;
@@ -62,17 +66,21 @@ struct iw_api_control_t {
     float battery_right;
     float battery_warning_voltage;
     uint8_t _reserved[8];
+    uint8_t _ini;
 };
 class iw_api_c {
     public:
         iw_api_data_t data;
         iw_api_control_t control;
+        void ini();
         void injest(char in);
         bool new_packet();
         void build_control_packet();
         bool buttonPressed(uint8_t button); 
+        bool ini_sync();
         uint8_t control_packet[SIZE_OF_API_REPLY];
     private:
+        void clearFirstButtons();
         uint8_t version = 1;
         uint8_t reply_header[5] =  {'I','W','A','P','I'};
         uint8_t reply_footer[3] = {';','!',';'};

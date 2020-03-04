@@ -1,18 +1,32 @@
 #include "iw_api.h"
-// #include "Arduino.h"
+
+#define DEBUG_ARDUINO false
+
+#if DEBUG_ARDUINO
+#include "Arduino.h"
+#endif
+
+/*
+INI will send a flag to the wheels that new values are present and to cancel those values
+*/
+void iw_api_c::ini() {
+    control._ini ++;
+}
 
 /*
 Injest new UART characters here. If the packet is complete, it will flag the packet as new
 */
 void iw_api_c::injest(char in) {
     _api_error_t status = in_byte(in);
-    if (status == GOOD) parse();
-    else if (status == NOT_READY) return;
-    // else {
-    //     if (status == WRONG_VERSION) Serial.println("WRONG VERSION");
-    //     else if (status == WRONG_VERSION) Serial.println("WRONG SIZE");
-    //     else if (status == BAD_CHECKSUM) Serial.println("BAD CHECKSUM");
-    // }
+    if (status == IW_GOOD) parse();
+    else if (status == IW_NOT_READY) return;
+    #if DEBUG_ARDUINO
+    else {
+        if (status == IW_WRONG_VERSION) Serial.println("WRONG VERSION");
+        else if (status == IW_WRONG_VERSION) Serial.println("WRONG SIZE");
+        else if (status == IW_BAD_CHECKSUM) Serial.println("BAD CHECKSUM");
+    }
+    #endif
 }
 
 
@@ -28,22 +42,27 @@ void iw_api_c::parse() {
     data.focus = uin16_ify(&buffer[27]);
     data.iris = uin16_ify(&buffer[29]);
     data.zoom = uin16_ify(&buffer[31]);
-    data._blip_1 = buffer[33];
-    data._blip_2 = buffer[34];
-    data._blip_3 = buffer[35];
-    data._blip_4 = buffer[36];
-    data._states0 = buffer[37];
-    data._states1 = buffer[38];
-    data._reserved[0] = buffer[39];
-    data._reserved[1] = buffer[40];
-    data._reserved[2] = buffer[41];
-    data._reserved[3] = buffer[42];
-    data._reserved[4] = buffer[43];
-    data._reserved[5] = buffer[44];
-    data._reserved[6] = buffer[45];
-    data._reserved[7] = buffer[46];
-    data.rssi = buffer[47] - 128;
-    data.snr = (buffer[48] - 128) / 10.0f;
+    data.pan_mass = buffer[33];
+    data.tilt_mass = buffer[34];
+    data.pan_speed = buffer[35];
+    data.tilt_speed = buffer[36];
+    data._blip_1 = buffer[37];
+    data._blip_2 = buffer[38];
+    data._blip_3 = buffer[39];
+    data._blip_4 = buffer[40];
+    data._states_0 = buffer[41];
+    data._states_1 = buffer[42];
+    data._reserved[0] = buffer[43];
+    data._reserved[1] = buffer[44];
+    data._reserved[2] = buffer[45];
+    data._reserved[3] = buffer[46];
+    data._reserved[4] = buffer[47];
+    data._reserved[5] = buffer[48];
+    data._reserved[6] = buffer[49];
+    data._reserved[7] = buffer[50];
+    data._ini_propagation = buffer[51];
+    data.rssi = buffer[52] - 128;
+    data.snr = (buffer[53] - 128) / 10.0f;
     new_packet_flag = true;
 }
 
@@ -52,13 +71,35 @@ void iw_api_c::parse() {
 Will return true, only once, if a new packet is available.
 */
 bool iw_api_c::new_packet(){
+    static bool first_packet = false;
     if (new_packet_flag) {
         new_packet_flag = false;
+        if (!first_packet) {
+            clearFirstButtons();
+            first_packet = true;
+        }
         return true;
     }
     return false;
 }
 
+/*
+Used when the first packet arrives to sync the button clicks
+*/
+void iw_api_c::clearFirstButtons(){
+    buttonPressed(1);
+    buttonPressed(2);
+    buttonPressed(3);
+    buttonPressed(4);
+}
+
+/*
+Determines if the wheels have received the ini command and are in sync
+*/
+bool iw_api_c::ini_sync(){
+    if (control._ini == data._ini_propagation) return true;
+    return false;
+}
 
 /*
 Receives new bytes and returns true if the byte is ready
@@ -69,28 +110,28 @@ _api_error_t iw_api_c::in_byte(char in) {
     buffer[SIZE_OF_API_PACKET-1] = in; //add the new byte
 
     //scan for header
-    if (buffer[0] != 'I') return NOT_READY;
-    if (buffer[1] != 'W') return NOT_READY;
-    if (buffer[2] != 'A') return NOT_READY;
-    if (buffer[3] != 'P') return NOT_READY;
-    if (buffer[4] != 'I') return NOT_READY;
+    if (buffer[0] != 'I') return IW_NOT_READY;
+    if (buffer[1] != 'W') return IW_NOT_READY;
+    if (buffer[2] != 'A') return IW_NOT_READY;
+    if (buffer[3] != 'P') return IW_NOT_READY;
+    if (buffer[4] != 'I') return IW_NOT_READY;
 
     //scan for version
-    if (buffer[5] != API_VERSION) return WRONG_VERSION;
+    if (buffer[5] != API_VERSION) return IW_WRONG_VERSION;
     
     //check for proper termination
-    if (buffer[SIZE_OF_API_PACKET-3] != ';') return WRONG_SIZE;
-    if (buffer[SIZE_OF_API_PACKET-2] != '!') return WRONG_SIZE;
-    if (buffer[SIZE_OF_API_PACKET-1] != ';') return WRONG_SIZE;
+    if (buffer[SIZE_OF_API_PACKET-3] != ';') return IW_WRONG_SIZE;
+    if (buffer[SIZE_OF_API_PACKET-2] != '!') return IW_WRONG_SIZE;
+    if (buffer[SIZE_OF_API_PACKET-1] != ';') return IW_WRONG_SIZE;
 
     //calculate payload checksum
     char body[SIZE_OF_API_BODY];
     for (int x = 0; x < SIZE_OF_API_BODY; x++) body[x] = buffer[x+5];  //shift the body of the packet into the body
     char cs = buffer[SIZE_OF_API_PACKET-4];
     char correct = checksum(body, SIZE_OF_API_BODY);
-    if (cs != correct) return BAD_CHECKSUM;
+    if (cs != correct) return IW_BAD_CHECKSUM;
 
-    return GOOD;
+    return IW_GOOD;
 }
 
 //converts 2 chars into 1 32-bit unsigned short integer
@@ -110,6 +151,8 @@ void iw_api_c::build_control_packet() {
     int offset = 0; 
     offset = addItem(control_packet, reply_header, sizeof(reply_header), offset);
     offset = addItem(control_packet, &version, sizeof(version), offset);
+
+    offset = addItem(control_packet, &control._ini, sizeof(control._ini), offset);
 
     offset = addItem(control_packet, control.name, sizeof(control.name), offset);
 
