@@ -89,7 +89,7 @@ The API contains no routine to handle character strings that are too large for t
 
 # Hardware Layer
 You can communicate with the Inertia Wheels via several ports.
-
+![Imgur](https://imgur.com/lKUdGTy.jpg)
 ### Receiver UART
 The main output connector for embedded applications is the recievers 4-Pin output connector. 
 
@@ -112,3 +112,5 @@ The same API is sent via the USB connector on the receiver. Unfortunately as of 
 
 #### USB Baud Settings
 921600 Baud 8N1
+
+
