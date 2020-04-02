@@ -86,3 +86,29 @@ The API contains no routine to handle character strings that are too large for t
 1. First populate all fields and data. Pay special attention to be certain that items that are not dynamically updatable have been configured correctly.
 2. Call `inertia_wheels.build_control_packet()` to have the library populate the `inertia_wheels.control_packet` array.
 3. Send the `inertia_wheels.control_packet` out your UART buffer.
+
+# Hardware Layer
+You can communicate with the Inertia Wheels via several ports.
+
+### Receiver UART
+The main output connector for embedded applications is the recievers 4-Pin output connector. 
+
+#### UART Baud Settings
+460800 Baud 8N1
+
+#### Connector P/N
+Molex P/N 105307-1204 
+
+#### Pin Out
+Pin # | Function | Notes
+------|----------|-----
+Pin 1 | Receiver TX -> Device RX | 3.3v Logic Level
+Pin 2 | Receiver RX <- Device TX | 3.3v, 5v Tolerant
+Pin 3 | VCC | 5-12v, ~0.5amp @ 5v
+Pin 4 | Ground | 
+
+### Receiver USB
+The same API is sent via the USB connector on the receiver. Unfortunately as of 0.3.1, the receiver is not capable of receiving the full bi-directional API. The USB can only output wheel data. 
+
+#### USB Baud Settings
+921600 Baud 8N1
