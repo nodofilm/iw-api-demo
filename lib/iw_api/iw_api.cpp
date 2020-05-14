@@ -1,17 +1,11 @@
 #include "iw_api.h"
 
-#define DEBUG_ARDUINO false
+#define DEBUG_ARDUINO true
 
 #if DEBUG_ARDUINO
 #include "Arduino.h"
 #endif
 
-/*
-INI will send a flag to the wheels that new values are present and to cancel those values
-*/
-void iw_api_c::ini() {
-    control._ini ++;
-}
 
 /*
 Injest new UART characters here. If the packet is complete, it will flag the packet as new
@@ -23,7 +17,7 @@ void iw_api_c::injest(char in) {
     #if DEBUG_ARDUINO
     else {
         if (status == IW_WRONG_VERSION) Serial.println("WRONG VERSION");
-        else if (status == IW_WRONG_VERSION) Serial.println("WRONG SIZE");
+        else if (status == IW_WRONG_SIZE) Serial.println("WRONG SIZE");
         else if (status == IW_BAD_CHECKSUM) Serial.println("BAD CHECKSUM");
     }
     #endif
@@ -34,9 +28,13 @@ void iw_api_c::injest(char in) {
 Takes the universal buffer and parses it into the data 
 */
 void iw_api_c::parse() {
-    data.pan = int32_ify(&buffer[7]);
-    data.tilt = int32_ify(&buffer[11]);
-    data.roll = int32_ify(&buffer[15]);
+    savePacket();
+    data._pan_raw = int32_ify(&buffer[7]);
+    data.pan =  data._pan_raw + pan_offset;
+    data._tilt_raw = int32_ify(&buffer[11]);
+    data.tilt = data._tilt_raw + tilt_offset;
+    data._roll_raw = int32_ify(&buffer[15]);
+    data.roll = data._roll_raw + roll_offset;
     data.knob1 = int32_ify(&buffer[19]);
     data.knob2 = int32_ify(&buffer[23]);
     data.focus = uin16_ify(&buffer[27]);
@@ -60,12 +58,59 @@ void iw_api_c::parse() {
     data._reserved[5] = buffer[48];
     data._reserved[6] = buffer[49];
     data._reserved[7] = buffer[50];
-    data._ini_propagation = buffer[51];
-    data.rssi = buffer[52] - 128;
-    data.snr = (buffer[53] - 128) / 10.0f;
+    data._session_id = (uint16_t) uin16_ify(&buffer[51]);
+    data._knob1_uid = buffer[53];
+    data._knob2_uid = buffer[54];
+    data.rssi = buffer[55] - 128;
+    data.snr = (buffer[56] - 128) / 10.0f;
+    packetWatchDog();
     new_packet_flag = true;
 }
+/*
+Saves a copy of the last packet data for comparision for the next packet
+*/
+void iw_api_c::savePacket() {
+    last_data = data;
+}
+/*
+Watch Dog task. Comparese the last packet to this one. If a new session ID is found, it automatically offsets the wheels to the previous position to avoid jumping.
+*/
+void iw_api_c::packetWatchDog() {
+    if (data._session_id == 0) return;
+    if (last_data._session_id != data._session_id) {
+        client_sid = data._session_id;
+        set_wheels(last_data.pan, last_data.tilt, last_data.roll);
+        // Serial.println("new session, changing SID to match");
+        // Serial.println(data._session_id);
+        // Serial.println(client_sid);
+    }
+    if (data._knob1_uid == control.knob1._uid_setup) data.knob1_ready = true;
+    else data.knob1_ready = false;
+    if (data._knob2_uid == control.knob2._uid_setup) data.knob2_ready = true;
+    else data.knob2_ready = false;
+}
 
+/*
+Sets the wheel values to an exact position. Does not propogate. Instead it applies a local offset value. 
+*/
+void iw_api_c::set_wheels(int32_t pan, int32_t tilt, int32_t roll) {
+    pan_offset = pan - data._pan_raw;
+    tilt_offset = tilt - data._tilt_raw;
+    roll_offset = roll - data._roll_raw;
+}
+/*
+Configure a knob. 
+Set the default value, the max value, the min value, and scaling. 
+If scaling is applied, [value]/set/max/min will all be multiplied scaling on this end, but NOT scaled on the UI on the wheels. 
+*/
+void iw_api_knob_t::config(int32_t set, int32_t max, int32_t min, int32_t scaling){
+    _uid_setup++;
+    if (!_uid_setup) _uid_setup = 1;
+    _set = set;
+    _max = max;
+    _min = min;
+    _scaling = scaling;
+}
 
 /*
 Will return true, only once, if a new packet is available.
@@ -84,6 +129,18 @@ bool iw_api_c::new_packet(){
 }
 
 /*
+Will return true, only once, if a new session is detected. A new session will either indicate that the wheels rebooted or that you have requested a new session.
+*/
+bool iw_api_c::new_session(){
+    static uint16_t session_id;
+    if (session_id != data._session_id) {
+        session_id = data._session_id;
+        return true;
+    }
+    return false;
+}
+
+/*
 Used when the first packet arrives to sync the button clicks
 */
 void iw_api_c::clearFirstButtons(){
@@ -93,13 +150,6 @@ void iw_api_c::clearFirstButtons(){
     buttonPressed(4);
 }
 
-/*
-Determines if the wheels have received the ini command and are in sync
-*/
-bool iw_api_c::ini_sync(){
-    if (control._ini == data._ini_propagation) return true;
-    return false;
-}
 
 /*
 Receives new bytes and returns true if the byte is ready
@@ -115,7 +165,6 @@ _api_error_t iw_api_c::in_byte(char in) {
     if (buffer[2] != 'A') return IW_NOT_READY;
     if (buffer[3] != 'P') return IW_NOT_READY;
     if (buffer[4] != 'I') return IW_NOT_READY;
-
     //scan for version
     if (buffer[5] != API_VERSION) return IW_WRONG_VERSION;
     
@@ -152,7 +201,10 @@ void iw_api_c::build_control_packet() {
     offset = addItem(control_packet, reply_header, sizeof(reply_header), offset);
     offset = addItem(control_packet, &version, sizeof(version), offset);
 
-    offset = addItem(control_packet, &control._ini, sizeof(control._ini), offset);
+    offset = addItem(control_packet, &client_sid, sizeof(client_sid), offset);
+    offset = addItem(control_packet, &data.pan, sizeof(data.pan), offset);
+    offset = addItem(control_packet, &data.tilt, sizeof(data.tilt), offset);
+    offset = addItem(control_packet, &data.roll, sizeof(data.roll), offset); 
 
     offset = addItem(control_packet, control.name, sizeof(control.name), offset);
 
@@ -160,16 +212,18 @@ void iw_api_c::build_control_packet() {
     offset = addItem(control_packet, control.status, sizeof(control.status), offset);
 
     offset = addItem(control_packet, control.knob1.name, sizeof(control.knob1.name), offset);
-    offset = addItem(control_packet, &control.knob1.set, sizeof(control.knob1.set), offset);
-    offset = addItem(control_packet, &control.knob1.max, sizeof(control.knob1.max), offset);
-    offset = addItem(control_packet, &control.knob1.min, sizeof(control.knob1.min), offset);
-    offset = addItem(control_packet, &control.knob1.scaling, sizeof(control.knob1.scaling), offset);
+    offset = addItem(control_packet, &control.knob1._set, sizeof(control.knob1._set), offset);
+    offset = addItem(control_packet, &control.knob1._max, sizeof(control.knob1._max), offset);
+    offset = addItem(control_packet, &control.knob1._min, sizeof(control.knob1._min), offset);
+    offset = addItem(control_packet, &control.knob1._scaling, sizeof(control.knob1._scaling), offset);
+    offset = addItem(control_packet, &control.knob1._uid_setup, sizeof(control.knob1._uid_setup), offset);
 
     offset = addItem(control_packet, control.knob2.name, sizeof(control.knob2.name), offset);
-    offset = addItem(control_packet, &control.knob2.set, sizeof(control.knob2.set), offset);
-    offset = addItem(control_packet, &control.knob2.max, sizeof(control.knob2.max), offset);
-    offset = addItem(control_packet, &control.knob2.min, sizeof(control.knob2.min), offset);
-    offset = addItem(control_packet, &control.knob2.scaling, sizeof(control.knob2.scaling), offset);
+    offset = addItem(control_packet, &control.knob2._set, sizeof(control.knob2._set), offset);
+    offset = addItem(control_packet, &control.knob2._max, sizeof(control.knob2._max), offset);
+    offset = addItem(control_packet, &control.knob2._min, sizeof(control.knob2._min), offset);
+    offset = addItem(control_packet, &control.knob2._scaling, sizeof(control.knob2._scaling), offset);
+    offset = addItem(control_packet, &control.knob2._uid_setup, sizeof(control.knob2._uid_setup), offset);
 
     offset = addItem(control_packet, control.button1_name, sizeof(control.button1_name), offset);
     offset = addItem(control_packet, control.button2_name, sizeof(control.button2_name), offset);
@@ -189,7 +243,6 @@ void iw_api_c::build_control_packet() {
     for (int x = 0; x < SIZE_OF_API_REPLY_BODY; x++) body[x] = control_packet[x+5];  //shift the body of the packet into the body
     uint8_t cs = checksum(body, SIZE_OF_API_REPLY_BODY);
     offset = addItem(control_packet, &cs, sizeof(cs), offset);
-    
     addItem(control_packet, reply_footer, sizeof(reply_footer), offset);
 }
 /*
@@ -226,6 +279,12 @@ bool iw_api_c::buttonPressed(uint8_t num){
         }
     }
     return false;
+}
+/*
+This will request that the Inertia Wheels starts a new session. It will increment the session ID one value.
+*/
+void iw_api_c::request_new_session() {
+    client_sid = data._session_id + 1;
 }
 
 /*
