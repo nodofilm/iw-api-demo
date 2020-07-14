@@ -11,12 +11,6 @@ The UI elements being controlled are 4 customs buttons and 2 custom knobs.
 */
 iw_api_c inertia_wheels;                                        //Create an instance of the Inertia Wheels class
 
-void print_wheel_data();
-void print_fiz_data();
-void print_knob_data();
-void print_signal_data();
-void print_mass_data();
-void knob_ini_check();
 
 void setup() {
     pinMode(13, OUTPUT);
@@ -82,18 +76,23 @@ void loop() {
                 }
                 first_packet = false;
             }
-            //Run your tasks here
             print_wheel_data();
-            print_fiz_data();
-            print_knob_data();
-            print_signal_data();
-            print_mass_data();
-            check_buttons();
+            // print_fiz_data();
+            // print_knob_data();
+            // print_signal_data();
+            // print_mass_data();
+            // check_buttons();
+            /*
+                RUN YOUR TASKS HERE
+                Uncomment the above functions to see the data in the printout
+
+            */
 
             //Example of firing a command when a new session is detected.
             if (inertia_wheels.new_session()) {
                 Serial.println("NEW SESSION DETECTED!");
                 Serial.println(inertia_wheels.data._session_id);
+                Serial.println(inertia_wheels.data._blip_1);
             }
             //Generate a control reply. You do not need to update at 100Hz. Anywhere from 1Hz to 10Hz will suffice. 
             count ++;
@@ -166,6 +165,8 @@ void print_mass_data(){
 }
 void check_buttons() {
     if (inertia_wheels.buttonPressed(1)) {
+        Serial.println("Button 1 Pressed");
+        Serial.println(inertia_wheels.data._blip_1);
         strcpy(inertia_wheels.control.name, "API 2"); 
         strcpy(inertia_wheels.control.status, "But 1 Down");       //Show a status on both the dashboard an in the menu. Up to 14 characters
         inertia_wheels.control.status_level = IW_OKAY;
@@ -177,6 +178,7 @@ void check_buttons() {
         inertia_wheels.control.knob2.config(-40,120,-120,20);
     }
     if (inertia_wheels.buttonPressed(2)) {
+        Serial.println("Button 2 Pressed");
         strcpy(inertia_wheels.control.name, "API 2");
         inertia_wheels.control.status_level = IW_OFF; //Makes the status text invisible on the dashboard
 
