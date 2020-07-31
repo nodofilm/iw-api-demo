@@ -60,6 +60,8 @@ void setup() {
     inertia_wheels.control.battery_right = 11.9;
     inertia_wheels.control.battery_warning_voltage = 12.0;  //This is the voltage threshold at which the display will start to warn the user that hte battery is low
 
+    inertia_wheels.control.client_sid = random(65536);// You should assign a unique signed 16-bit number to serve as your session id. This number should be different every time you reboot. This allows the wheels to start fresh
+
 }
 
 void loop() {
@@ -68,14 +70,7 @@ void loop() {
         inertia_wheels.injest(Serial1.read());                              //injest() takes one byte at a time and puts it into the class, it will perform all necessary tasks to parse the incoming packet as well. 
         if (inertia_wheels.new_packet()){                                   //new_packet() returns true once a new packet has been found and parsed. New data is ready to be used by your application now.
             
-            //Example of how to request a new session at first packet. 
-            static bool first_packet = true;
-            if (first_packet){
-                if (inertia_wheels.data._session_id != 0) {
-                    inertia_wheels.request_new_session();
-                }
-                first_packet = false;
-            }
+            
             print_wheel_data();
             // print_fiz_data();
             // print_knob_data();
@@ -88,12 +83,6 @@ void loop() {
 
             */
 
-            //Example of firing a command when a new session is detected.
-            if (inertia_wheels.new_session()) {
-                Serial.println("NEW SESSION DETECTED!");
-                Serial.println(inertia_wheels.data._session_id);
-                Serial.println(inertia_wheels.data._blip_1);
-            }
             //Generate a control reply. You do not need to update at 100Hz. Anywhere from 1Hz to 10Hz will suffice. 
             count ++;
             if (count >= 10){                                               //This counter is used to send a control packet 1 out of ever 10 incoming packets
@@ -145,7 +134,7 @@ void print_knob_data(){
 }
 void print_signal_data(){
     Serial.print("Session ID: ");
-    Serial.println(inertia_wheels.data._session_id);
+    Serial.println(inertia_wheels.data._host_sid);
     Serial.print("RSSI: ");
     Serial.println(inertia_wheels.data.rssi);
     Serial.print("SNR: ");

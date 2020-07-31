@@ -28,13 +28,9 @@ void iw_api_c::injest(char in) {
 Takes the universal buffer and parses it into the data 
 */
 void iw_api_c::parse() {
-    savePacket();
     data._pan_raw = int32_ify(&buffer[7]);
-    data.pan =  data._pan_raw + pan_offset;
     data._tilt_raw = int32_ify(&buffer[11]);
-    data.tilt = data._tilt_raw + tilt_offset;
     data._roll_raw = int32_ify(&buffer[15]);
-    data.roll = data._roll_raw + roll_offset;
     data.knob1 = int32_ify(&buffer[19]);
     data.knob2 = int32_ify(&buffer[23]);
     data.focus = uin16_ify(&buffer[27]);
@@ -58,31 +54,31 @@ void iw_api_c::parse() {
     data._reserved[5] = buffer[48];
     data._reserved[6] = buffer[49];
     data._reserved[7] = buffer[50];
-    data._session_id = (uint16_t) uin16_ify(&buffer[51]);
+    data._host_sid = (uint16_t) uin16_ify(&buffer[51]);
     data._knob1_uid = buffer[53];
     data._knob2_uid = buffer[54];
     data.rssi = buffer[55] - 128;
     data.snr = (buffer[56] - 128) / 10.0f;
     packetWatchDog();
+    if (host_sid == data._host_sid) {
+        data.pan =  data._pan_raw + pan_offset;
+        data.tilt = data._tilt_raw + tilt_offset;
+        data.roll = data._roll_raw + roll_offset;
+    } 
     new_packet_flag = true;
-}
-/*
-Saves a copy of the last packet data for comparision for the next packet
-*/
-void iw_api_c::savePacket() {
-    last_data = data;
 }
 /*
 Watch Dog task. Comparese the last packet to this one. If a new session ID is found, it automatically offsets the wheels to the previous position to avoid jumping.
 */
 void iw_api_c::packetWatchDog() {
-    if (data._session_id == 0) return;
-    if (last_data._session_id != data._session_id) {
-        client_sid = data._session_id;
-        set_wheels(last_data.pan, last_data.tilt, last_data.roll);
-        // Serial.println("new session, changing SID to match");
-        // Serial.println(data._session_id);
-        // Serial.println(client_sid);
+    if (data._host_sid == 0) return;
+    if (host_sid == 0) { //fresh boot
+        host_sid = data._host_sid;
+        new_offset(0,0,0);
+    }
+    if (host_sid != data._host_sid) { //new host sid, ie wheels reboot
+        host_sid = data._host_sid;
+        new_offset(data.pan, data.tilt, data.roll);
     }
     if (data._knob1_uid == control.knob1._uid_setup) data.knob1_ready = true;
     else data.knob1_ready = false;
@@ -93,10 +89,10 @@ void iw_api_c::packetWatchDog() {
 /*
 Sets the wheel values to an exact position. Does not propogate. Instead it applies a local offset value. 
 */
-void iw_api_c::set_wheels(int32_t pan, int32_t tilt, int32_t roll) {
-    pan_offset = pan - data._pan_raw;
-    tilt_offset = tilt - data._tilt_raw;
-    roll_offset = roll - data._roll_raw;
+void iw_api_c::new_offset(int32_t p, int32_t t, int32_t r) {
+    pan_offset = p - data._pan_raw;
+    tilt_offset = t - data._tilt_raw;
+    roll_offset =  r - data._roll_raw;
 }
 /*
 Configure a knob. 
@@ -123,18 +119,6 @@ bool iw_api_c::new_packet(){
             clearFirstButtons();
             first_packet = true;
         }
-        return true;
-    }
-    return false;
-}
-
-/*
-Will return true, only once, if a new session is detected. A new session will either indicate that the wheels rebooted or that you have requested a new session.
-*/
-bool iw_api_c::new_session(){
-    static uint16_t session_id;
-    if (session_id != data._session_id) {
-        session_id = data._session_id;
         return true;
     }
     return false;
@@ -201,7 +185,7 @@ void iw_api_c::build_control_packet() {
     offset = addItem(control_packet, reply_header, sizeof(reply_header), offset);
     offset = addItem(control_packet, &version, sizeof(version), offset);
 
-    offset = addItem(control_packet, &client_sid, sizeof(client_sid), offset);
+    offset = addItem(control_packet, &control.client_sid, sizeof(control.client_sid), offset);
     offset = addItem(control_packet, &data.pan, sizeof(data.pan), offset);
     offset = addItem(control_packet, &data.tilt, sizeof(data.tilt), offset);
     offset = addItem(control_packet, &data.roll, sizeof(data.roll), offset); 
@@ -280,12 +264,7 @@ bool iw_api_c::buttonPressed(uint8_t num){
     }
     return false;
 }
-/*
-This will request that the Inertia Wheels starts a new session. It will increment the session ID one value.
-*/
-void iw_api_c::request_new_session() {
-    client_sid = data._session_id + 1;
-}
+
 
 /*
 CheckSum8 Modulo 256 

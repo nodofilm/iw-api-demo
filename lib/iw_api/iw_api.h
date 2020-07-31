@@ -33,7 +33,7 @@ struct iw_api_data_t {
     uint8_t pan_speed;
     uint8_t tilt_speed;
     float snr;
-    uint16_t _session_id;
+    uint16_t _host_sid;
     uint8_t _blip_1;
     uint8_t _blip_2;
     uint8_t _blip_3;
@@ -60,6 +60,7 @@ struct iw_api_knob_t {
 };
 
 struct iw_api_control_t {
+    uint16_t client_sid;
     char name[9];
     char status[15];
     _api_status_level status_level;
@@ -82,15 +83,12 @@ class iw_api_c {
         iw_api_control_t control;
         void injest(char in);
         bool new_packet();
-        bool new_session();
-        void request_new_session();
         void build_control_packet();
         bool buttonPressed(uint8_t button); 
-        void set_wheels(int32_t pan, int32_t tilt, int32_t roll);
         uint8_t control_packet[SIZE_OF_API_REPLY];
-        uint16_t client_sid;
+        uint16_t host_sid;
     private:
-        void savePacket();
+        void new_offset(int32_t pan, int32_t tilt, int32_t roll);
         iw_api_data_t last_data;
         void packetWatchDog();
         void clearFirstButtons();
@@ -108,6 +106,8 @@ class iw_api_c {
         void parse();
         char checksum(char *buf_p, int len);
         int32_t addItem(void * to, void * from, int size, int offset);
+        int32_t saved_pan, saved_tilt, saved_roll;
+        bool packet_session_match = false;
 };
 
 #endif
