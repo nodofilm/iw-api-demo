@@ -36,6 +36,10 @@ Data Object | Type | Description | Note
 data.pan | int32_t | Pan position | See section on proper scaling
 data.tilt | int32_t | Tilt position | Must be scaled
 data.roll | int32_t | Roll position | Must be scaled
+data.pan_mass | uint8_t | Pan mass 0-10 | * See Note Below
+data.tilt_mass | uint8_t | Tilt mass 0-10 | * See Note Below
+data.pan_speed | uint8_t | Pan speed 0-255 | * See Note Below
+data.tilt_speed | uint8_t | Tilt speed 0-255 | * See Note Below
 data.knob1 | int32_t | Custom API Knob Data | This can be configured
 data.knob2 | int32_t | Custom API Knob Data | This can be configured
 data.focus | uint16_t | Focus position | 0 - 0xFFFF Scaling
@@ -46,6 +50,8 @@ data.snr | float | Signal to Noise Ratio | *
 data.\_blip_# | uint8_t | Container for button pressing | Use the buttonPressed(#) function
 data.\_states_# | uint8_t\[2] | Reserved
 data.\_reserved | uint8_t\[8] | Reserved
+
+**Mass and Speed are sent as helpful indicators of the style of operating that the user may use. A high mass indicates they will likely use slow accelerations. A low speed (interpreted as a gear ratio) indicates that faster motor speeds may be used.*
 
 #### Scaling Wheel Data
 The wheel data from pan/tilt/roll will come in as raw int32_t variables. These values should be interpreted thus that 0-360,000 is one full 360° rotation of the camera. 
