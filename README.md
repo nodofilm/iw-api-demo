@@ -48,7 +48,7 @@ data.\_states_# | uint8_t\[2] | Reserved
 data.\_reserved | uint8_t\[8] | Reserved
 
 #### Scaling Wheel Data
-The wheel data from pan/tilt/roll will come in as raw int32_t variables. These values should be interpreted thus that 0-327,680 is one full 360° rotation of the camera. 
+The wheel data from pan/tilt/roll will come in as raw int32_t variables. These values should be interpreted thus that 0-360,000 is one full 360° rotation of the camera. 
 
 #### Button Presses
 `inertia_wheels.buttonPressed(#)`
