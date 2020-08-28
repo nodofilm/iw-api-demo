@@ -1,8 +1,11 @@
 # iw-api-demo
-Inertia Wheels API demo embedded applications. This project is for anyone looking to create a project/product that integrates with the Inertia Wheels. 
+Inertia Wheels API demo embedded applications. This project is for anyone looking to create a project/product that integrates with the Inertia Wheels.
+
+### Compatibility
+This version (v2) of the API is functional as of V1.0.0.
 
 ### About
-The project contains an Arduino INO project file and a 
+The project contains an Arduino INO project file in the src folder and a minimal C++ library in the lib folder.
 
 #### Control your Project with Inertia Wheels
 Pan, Tilt, Roll, Focus, Iris, Zoom, Camera Run/Stop data are all available.
