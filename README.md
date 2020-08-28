@@ -67,10 +67,6 @@ control.name | char string | Name your application | On the dashboard, in the me
 control.status | char string | Status reporting | On the dashboard, in the menu | Maximum 14 characters long + null term | Yes
 control.status_level | uint8_t \_api_status_level | Set intensity of status report | On the dashboard | * | Yes
 control.knob#.name | char string | Name/set visible the knob | In menu. User can add to dashboard | Must set all values | Yes
-control.knob#.set | int32_t | Set the initial value of the knob | | Fixed, the first control packet sent will define this | No
-control.knob#.max | int32_t | Maximum value available to the user | | Fixed, the first control packet sent will define this | No
-control.knob#.min | int32_t | Minimum value available to the user | | Fixed, the first control packet sent will define this | No
-control.knob#.scaling | uint16_t | Value > 1 will turn on scaling/smoothing | | Max/min values will be scaled by this | No
 control.button#\_name | char string | Name/set visible the button | In menu. User can add to dashboard | Maximum 14 characters long + null term | Yes
 control.roll\_name | char string | Rename Roll | | Maximum 14 characters long + null term | No
 control.lens\_status | char string | Lens status string | | Maximum 14 characters long + null term | Yes
@@ -89,3 +85,45 @@ The API contains no routine to handle character strings that are too large for t
 1. First populate all fields and data. Pay special attention to be certain that items that are not dynamically updatable have been configured correctly.
 2. Call `inertia_wheels.build_control_packet()` to have the library populate the `inertia_wheels.control_packet` array.
 3. Send the `inertia_wheels.control_packet` out your UART buffer.
+
+# Knob Control
+To configure a knob, you must do three things. Name the knob, configure the knob, and check if it is ready. 
+
+#### Knob Naming
+In this example, the knob is named "Set 1". By giving the knob a name, it is given visibility.
+```c++
+strcpy(inertia_wheels.control.knob1.name, "Set 1");
+```
+
+#### Knob Configuration
+In this example, the knob will be updated on the dashboard is set to a value of -20. The knob has limits of a maximum of 100, minimum of -100. And it has a scaling factor of x10. Scaling means that in the API, the maximum values will be x10 the max, or 1000. Min x10, or -1000. Scaling allows the values to be smoothly updated with each packet. 
+```c++
+/*
+void config(int32_t set, int32_t max, int32_t min, int32_t scaling = 1);
+Configure a knob by calling config() function once.
+*/
+interia_wheels.control.knob1.config(-20, 100, -100, 10);
+```
+
+#### Knob Ready
+Because of the delays caused by full duplex wireless system, it is imporant to use the knob#_ready bool to confirm if the desired configuration of the knob has fully propogated through the system. Without confirming the knob is ready, your application could sample from a previous configuration. Typically, the knob is ready less than 0.5 seconds after configuration.
+```c++
+if (inertia_wheels.data.knob1_ready) dosomething = inertia_wheels.data.knob1;
+```
+
+# Session Control
+If you are building a complex bi-directional control application. For optimal smooth user experience, it may be necessary to generate a session ID. This is most helpful when the end device is rebooted and needs to start fresh.
+
+#### Client_SID
+The Client SID is sent to the Inertia Wheels. This unique identifier serves to tell the wheels that a new session has been created and to reset parameters of the API. If you processor is capable of truly random numbers. This example serves well.
+```c++
+inertia_wheels.control.client_sid = random(65536);
+```
+
+If your system is not capable of generating random numbers. This example shows how you could increment the client_sid and save it in your system's persistent memory for the next boot.
+```c++
+sid = load_sid_from_memory();
+sid++;
+inertia_wheels.control.client_sid = sid;
+save_sid_to_memory(sid);
+```
