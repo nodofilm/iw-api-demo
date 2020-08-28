@@ -1,6 +1,8 @@
 # iw-api-demo
 Inertia Wheels API demo embedded applications. This project is for anyone looking to create a project/product that integrates with the Inertia Wheels.
 
+For hardware requirements such as pin out, see [the hardware repository](https://github.com/nodofilm/iw-hardware).
+
 ### Compatibility
 This version (v2) of the API is functional as of V1.0.0.
 
