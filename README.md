@@ -67,8 +67,8 @@ control.name | char string | Name your application | On the dashboard, in the me
 control.status | char string | Status reporting | On the dashboard, in the menu | Maximum 14 characters long + null term | Yes
 control.status_level | uint8_t \_api_status_level | Set intensity of status report | On the dashboard | * | Yes
 control.knob#.name | char string | Name/set visible the knob | In menu. User can add to dashboard | Must set all values | Yes
+control.knob#.control() | function | See below for knob configuration | | | Yes
 control.button#\_name | char string | Name/set visible the button | In menu. User can add to dashboard | Maximum 14 characters long + null term | Yes
-control.roll\_name | char string | Rename Roll | | Maximum 14 characters long + null term | No
 control.lens\_status | char string | Lens status string | | Maximum 14 characters long + null term | Yes
 control.battery\_left | float | Voltage of left battery | | | Yes
 control.battery\_right | float | Voltage of right battery | | | Yes
