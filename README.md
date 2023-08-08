@@ -175,7 +175,7 @@ The blip items are tied to buttons. Each time the button is pressed, the integer
 
 ### Packet
 
-| Byte | Function | Format                | Example   | Hex |   |
+| Byte | Function | Format                | Example   | Hex | Notes  |
 |------|----------|-----------------------|-----------|-----|---|
 | 0    | Header   | ASCII Char            | I         | 49  |   |
 | 1    | Header   | ASCII Char            | W         | 57  |   |
@@ -184,48 +184,61 @@ The blip items are tied to buttons. Each time the button is pressed, the integer
 | 4    | Header   | ASCII Char            | I         | 49  |   |
 | 5    | Header   | ASCII Char            | x         | 78  |   |
 | 6    | Version  | uint8_t               | 1         | 1   |   |
-| 7    | Pan      | int32_t               |           | 0A  |   |
-| 8    | Pan      | int32_t               |           | 0B  |   |
-| 9    | Pan      | int32_t               |           | 0C  |   |
-| 10   | Pan      | int32_t               | 168496141 | 0D  |   |
-| 11   | Tilt     | int32_t               |           | 0A  |   |
-| 12   | Tilt     | int32_t               |           | 0B  |   |
-| 13   | Tilt     | int32_t               |           | 0C  |   |
-| 14   | Tilt     | int32_t               | 168496141 | 0D  |   |
-| 15   | Roll     | int32_t               |           | 0A  |   |
-| 16   | Roll     | int32_t               |           | 0B  |   |
-| 17   | Roll     | int32_t               |           | 0C  |   |
-| 18   | Roll     | int32_t               | 168496141 | 0D  |   |
-| 19   | Jog A    | int32_t               |           | 0A  |   |
-| 20   | Jog A    | int32_t               |           | 0B  |   |
-| 21   | Jog A    | int32_t               |           | 0C  |   |
-| 22   | Jog A    | int32_t               | 168496141 | 0D  |   |
-| 23   | Jog B    | int32_t               |           | 0A  |   |
-| 24   | Jog B    | int32_t               |           | 0B  |   |
-| 25   | Jog B    | int32_t               |           | 0C  |   |
-| 26   | Jog B    | int32_t               | 168496141 | 0D  |   |
-| 27   | Focus    | uint16_t              |           | 0A  |   |
-| 28   | Focus    | uint16_t              | 2571      | 0B  |   |
-| 29   | Iris     | uint16_t              |           | 0A  |   |
-| 30   | Iris     | uint16_t              | 2571      | 0B  |   |
-| 31   | Zoom     | uint16_t              |           | 0A  |   |
-| 32   | Zoom     | uint16_t              | 2571      | 0B  |   |
-| 33   | To One   | uint8_t (blip)               | 10        | 0A  |   |
-| 34   | Reverse  | uint8_t (blip)               | 10        | 0A  |   |
-| 35   | Pause    | uint8_t (blip)               | 10        | 0A  |   |
-| 36   | Forward  | uint8_t (blip)              | 10        | 0A  |   |
-| 37   | Reserved |                       |           |     |   |
-| 38   | Reserved |                       |           |     |   |
-| 39   | Reserved |                       |           |     |   |
-| 40   | Reserved |                       |           |     |   |
-| 41   | Reserved |                       |           |     |   |
-| 42   | Reserved |                       |           |     |   |
-| 43   | Reserved |                       |           |     |   |
+| 7    | Packet ID  | uint8_t               | 1         | 1   | += 1 every packet  |
+| 8    | Pan      | int32_t               |           | 0A  |   |
+| 9    | Pan      | int32_t               |           | 0B  |   |
+| 10    | Pan      | int32_t               |           | 0C  |   |
+| 11   | Pan      | int32_t               | 168496141 | 0D  |   |
+| 12   | Tilt     | int32_t               |           | 0A  |   |
+| 13   | Tilt     | int32_t               |           | 0B  |   |
+| 14   | Tilt     | int32_t               |           | 0C  |   |
+| 15   | Tilt     | int32_t               | 168496141 | 0D  |   |
+| 16   | Roll     | int32_t               |           | 0A  |   |
+| 17   | Roll     | int32_t               |           | 0B  |   |
+| 18   | Roll     | int32_t               |           | 0C  |   |
+| 19   | Roll     | int32_t               | 168496141 | 0D  |   |
+| 20   | Jog A    | int32_t               |           | 0A  |   |
+| 21   | Jog A    | int32_t               |           | 0B  |   |
+| 22   | Jog A    | int32_t               |           | 0C  |   |
+| 23   | Jog A    | int32_t               | 168496141 | 0D  |   |
+| 24   | Jog B    | int32_t               |           | 0A  |   |
+| 25   | Jog B    | int32_t               |           | 0B  |   |
+| 26   | Jog B    | int32_t               |           | 0C  |   |
+| 27   | Jog B    | int32_t               | 168496141 | 0D  |   |
+| 28   | Focus    | uint16_t              |           | 0A  |   |
+| 29   | Focus    | uint16_t              | 2571      | 0B  |   |
+| 30   | Iris     | uint16_t              |           | 0A  |   |
+| 31   | Iris     | uint16_t              | 2571      | 0B  |   |
+| 32   | Zoom     | uint16_t              |           | 0A  |   |
+| 33   | Zoom     | uint16_t              | 2571      | 0B  |   |
+| 34   | Pan Mass   | uint8_t               | 10        | 0A  |   |
+| 35   | Tilt Mass   | uint8_t               | 10        | 0A  |   |
+| 36   | Pan Speed   | uint8_t               | 10        | 0A  | 1:10 Speed Ratio |
+| 37   | Tilt Speed   | uint8_t               | 10        | 0A  | 1:10 Speed Ratio |
+| 38   | API Button 1   | uint8_t (blip)               | 10        | 0A  | All buttons must be enumerated to appear on the wheels to the user  |
+| 39   | API Button 2  | uint8_t (blip)               | 10        | 0A  |   |
+| 40   | API Button 3    | uint8_t (blip)               | 10        | 0A  |   |
+| 41   | API Button 4  | uint8_t (blip)              | 10        | 0A  |   |
+| 42   | States 0 | uint8_t       | 10000000        | 80  | 80 = 10000000 = Recording, 0x00 = 00000000 = Not Recording |
+| 43   | States 1 | uint8_t         |         | 00  | 80 = 10000000 = Recording, 0x00 = 00000000 = Not Recording |
 | 44   | Reserved |                       |           |     |   |
-| 45   | Checksum | CheckSum8 Modulo 256  |           |     |   |
-| 46   | Footer   | ASCII Char            | ;         | 3B  |   |
-| 47   | Footer   | ASCII Char            | !         | 21  |   |
-| 48   | Footer   | ASCII Char            | ;         | 3B  |   |
+| 45   | Reserved |                       |           |     |   |
+| 46   | Reserved |                       |           |     |   |
+| 47   | Reserved |                       |           |     |   |
+| 48   | Reserved |                       |           |     |   |
+| 49   | Reserved |                       |           |     |   |
+| 50   | Reserved |                       |           |     |   |
+| 51   | Reserved |                       |           |     |   |
+| 52   | Session ID    | uint16_t              |           | 0A  |   |
+| 53   | Session ID    | uint16_t              | 2571      | 0B  |   |
+| 54   | API Knob 1 UID | uint8_t         |  10       | 0A  | Increments every time the knob is (re)initialized |
+| 55   | API Knob 2 UID | uint8_t         |  10       | 0A  |  |
+| 56   | RSSI | uint8_t         |  88 (-128 = -40dBm)       | 58  | Subtract 128 for true SNR |
+| 57   | SNR | uint8_t         |  132 (-128 = 4SNR)      | 84  | Subtract 128 for true RSSI |
+| 58   | Checksum | CheckSum8 Modulo 256  |           |     |   |
+| 59   | Footer   | ASCII Char            | ;         | 3B  |   |
+| 60   | Footer   | ASCII Char            | !         | 21  |   |
+| 61   | Footer   | ASCII Char            | ;         | 3B  |   |
 
 
 >>>>>>> master
