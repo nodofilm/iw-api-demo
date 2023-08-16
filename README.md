@@ -139,7 +139,7 @@ save_sid_to_memory(sid);
 =======
 # Hardware Layer
 You can communicate with the Inertia Wheels via several ports.
-![Imgur](https://imgur.com/lKUdGTy.jpg)
+![Imgur](https://i.imgur.com/fozlr8b.jpg)
 ### Receiver UART
 The main output connector for embedded applications is the recievers 4-Pin output connector. 
 
@@ -152,10 +152,10 @@ Molex P/N 105307-1204
 #### Pin Out
 Pin # | Function | Notes
 ------|----------|-----
-Pin 1 | Receiver TX -> Device RX | 5.0v Logic Level
-Pin 2 | Receiver RX <- Device TX | 3.3v, 5v Tolerant
-Pin 3 | VCC | 5-12v, ~0.5amp @ 5v
-Pin 4 | Ground | 
+Pin 1 | Ground | 
+Pin 2 | VCC | 5-12v, ~0.5amp @ 5v
+Pin 3 | Receiver RX <- Device TX | 3.3v, 5v Tolerant
+Pin 4 | Receiver TX -> Device RX | 5.0v Logic Level
 
 ### Receiver USB
 The same API is sent via the USB connector on the receiver. Unfortunately as of 0.3.1, the receiver is not capable of receiving the full bi-directional API. The USB can only output wheel data. 
